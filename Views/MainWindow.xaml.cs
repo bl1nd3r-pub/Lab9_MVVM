@@ -8,16 +8,15 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using Lab9_MVVM.ViewModels;
+using Lab10_DI.ViewModels;
 
-namespace Lab9_MVVM.Views
+namespace Lab10_DI.Views
 {
     public partial class MainWindow : Window
     {
         public MainWindow()
         {
             InitializeComponent();
-            DataContext = new MainViewModel();
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Lab9_MVVM.Models;
+﻿using Lab10_DI.Models;
+using Lab10_DI.Services;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -7,12 +8,15 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
-namespace Lab9_MVVM.ViewModels
+namespace Lab10_DI.ViewModels
 {
     public class MainViewModel : ObservableObject
     {
         // Коллекция контактов
         public ObservableCollection<Contact> Contacts { get; }
+        
+        private readonly IDialogService _dialogService;
+
         private string _name = string.Empty;
         private string _phone = string.Empty;
         public string Name
@@ -34,21 +38,28 @@ namespace Lab9_MVVM.ViewModels
         // Команды
         public ICommand AddCommand { get; }
         public ICommand DeleteCommand { get; }
-        public MainViewModel()
+        public MainViewModel(IDialogService dialogService)
         {
-            Contacts = new ObservableCollection<Contact>();
-            AddCommand = new RelayCommand(
-            AddContact,
+            _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
 
-            () => CanAddContact());
+            Contacts = new ObservableCollection<Contact>();
+            AddCommand = new RelayCommand(AddContact, () => CanAddContact());
             DeleteCommand = new RelayCommand<object?>(DeleteContact, CanDeleteContact);
         }
         private void AddContact()
         {
+            if (Contacts.Any(c => c.Phone == Phone))
+            {
+                _dialogService.ShowWarning("Контакт с таким номером уже существует!");
+                return;
+            }
+
             Contact newCont = new Contact(Name, Phone);
             Contacts.Add(newCont);
             Name = string.Empty;
             Phone = string.Empty;
+
+            _dialogService.ShowInfo("Контакт был успешно добавлен");
         }
         private bool CanAddContact()
         {
@@ -56,7 +67,10 @@ namespace Lab9_MVVM.ViewModels
         }
         private void DeleteContact(object? param)
         {
-            if (SelectedContact != null) { Contacts.Remove(SelectedContact); }
+            if (SelectedContact != null) {
+                bool confirmed = _dialogService.ShowConfirmation( $"Удалить контакт \"{SelectedContact.Name}\"?", "Подтверждение");
+                if (confirmed) {Contacts.Remove(SelectedContact);}
+            }
         }
         private bool CanDeleteContact(object? param)
         {
