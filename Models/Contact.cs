@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Lab9_MVVM.ViewModels;
+using Lab10_DI.ViewModels;
 
-namespace Lab9_MVVM.Models
+namespace Lab10_DI.Models
 {
     public class Contact : ObservableObject
     {
