@@ -1,12 +1,12 @@
-﻿using Lab10_DI.Services;
-using Lab10_DI.ViewModels;
-using Lab10_DI.Views;
+﻿using Lab11_Navigation.Services;
+using Lab11_Navigation.ViewModels;
+using Lab11_Navigation.Views;
 using Microsoft.Extensions.DependencyInjection;
 using System.Configuration;
 using System.Data;
 using System.Windows;
 
-namespace Lab10_DI
+namespace Lab11_Navigation
 {
     public partial class App : Application
     {
@@ -14,23 +14,27 @@ namespace Lab10_DI
         {
             base.OnStartup(e);
 
-            // 1. Созданиек коллекции для регистрации сервисов
-            var services = new ServiceCollection(); // Великий Майковский сервис колекшн
 
-            // 2. Регистрация сервисов сервисы
+            var services = new ServiceCollection();
+
+            services.AddSingleton<INavigationService, NavigationService>(); // Singleton: один экземпляр на всё приложение
             services.AddSingleton<IDialogService, DialogService>(); // Singleton: один экземпляр на всё приложение
-            services.AddTransient<MainViewModel>(); // Transient: новый экземпляр при каждом запросе
-            services.AddSingleton<MainWindow>(sp => // Singleton + явная настройка DataContext
+
+            services.AddTransient<AboutViewModel>(); // Transient: новый экземпляр при каждой навигации
+            services.AddTransient<ContactsListViewModel>();
+            services.AddTransient<ContactEditViewModel>();
+
+            services.AddSingleton<MainWindowViewModel>(); // Singleton
+
+            services.AddSingleton<MainWindow>(sp => // Singleton: главное окно (Shell)
             {
                 var window = new MainWindow();
-                window.DataContext = sp.GetRequiredService<MainViewModel>();
+                window.DataContext = sp.GetRequiredService<MainWindowViewModel>();
                 return window;
             });
 
-            // 3. Контейнер (ServiceProvider)
             var serviceProvider = services.BuildServiceProvider();
 
-            // 4. Получение и отображение главного окна
             var mainWindow = serviceProvider.GetRequiredService<MainWindow>();
             mainWindow.Show();
         }

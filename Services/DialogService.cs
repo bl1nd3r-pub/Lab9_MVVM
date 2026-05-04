@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace Lab10_DI.Services
+namespace Lab11_Navigation.Services
 {
     public class DialogService : IDialogService
     {

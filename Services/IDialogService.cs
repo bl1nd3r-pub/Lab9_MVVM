@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Lab10_DI.Services
+namespace Lab11_Navigation.Services
 {
     public interface IDialogService {
         void ShowInfo(string message, string title = "Информация");

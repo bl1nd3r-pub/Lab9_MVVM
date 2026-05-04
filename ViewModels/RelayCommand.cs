@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
-namespace Lab10_DI.ViewModels
+namespace Lab11_Navigation.ViewModels
 {
     public class RelayCommand(Action execute,
         Func<bool>? canExecute = null) : ICommand

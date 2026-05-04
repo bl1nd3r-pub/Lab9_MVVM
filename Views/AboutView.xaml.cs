@@ -15,11 +15,11 @@ using System.Windows.Shapes;
 namespace Lab11_Navigation.Views
 {
     /// <summary>
-    /// Логика взаимодействия для MainWindow.xaml
+    /// Логика взаимодействия для AboutView.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class AboutView : UserControl
     {
-        public MainWindow()
+        public AboutView()
         {
             InitializeComponent();
         }

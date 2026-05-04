@@ -15,11 +15,11 @@ using System.Windows.Shapes;
 namespace Lab11_Navigation.Views
 {
     /// <summary>
-    /// Логика взаимодействия для MainWindow.xaml
+    /// Логика взаимодействия для ContactEditView.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class ContactEditView : UserControl
     {
-        public MainWindow()
+        public ContactEditView()
         {
             InitializeComponent();
         }
