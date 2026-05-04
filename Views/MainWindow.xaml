@@ -1,34 +1,19 @@
-﻿<Window x:Class="Lab9_MVVM.Views.MainWindow"
+﻿<Window x:Class="Lab11_Navigation.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Lab9_MVVM"
+        xmlns:local="clr-namespace:Lab11_Navigation.Views"
         mc:Ignorable="d"
-        Title="Телефонная книга" Height="450" Width="800">
-    <Grid Margin="10">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-        <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Grid.Row="0" Margin="0,5"/>
-        <TextBox Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged}" Grid.Row="1" Margin="0,5"/>
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10">
-            <Button Content="Добавить" Width="100" Margin="0,0,10,0"
-                    Command="{Binding AddCommand}"/>
-            <Button Content="Удалить" Width="100"
-                    Command="{Binding DeleteCommand}"/>
+        Title="телефонная книга - навигация" Height="500" Width="800">
+    <DockPanel>
+        <!-- Навигационная панелька -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Background="#f0f0f0" Margin="0,0,0,10">
+            <Button Content="Контакты" Command="{Binding ShowContactsCommand}" Margin="5" Padding="10,5"/>
+            <Button Content="О программе" Command="{Binding ShowAboutCommand}" Margin="5" Padding="10,5"/>
         </StackPanel>
-        <!-- Список контактов -->
-        <DataGrid Grid.Row="3" AutoGenerateColumns="False" IsReadOnly="True"
-                ItemsSource="{Binding Contacts}"
-                SelectedItem="{Binding SelectedContact, Mode=TwoWay}">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Имя" Binding="{Binding Name}"/>
-                <DataGridTextColumn Header="Телефон" Binding="{Binding Phone}"/>
-            </DataGrid.Columns>
-        </DataGrid>
-    </Grid>
+
+        <!-- Область для отображения контента -->
+        <ContentControl Content="{Binding NavigationService.CurrentViewModel}" />
+    </DockPanel>
 </Window>

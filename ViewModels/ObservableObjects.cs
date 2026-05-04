@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Lab9_MVVM.ViewModels
+namespace Lab11_Navigation.ViewModels
 {
     public abstract class ObservableObject : INotifyPropertyChanged
     {
