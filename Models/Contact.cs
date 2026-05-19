@@ -1,41 +1,34 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Lab11_Navigation.ViewModels;
 
-namespace Lab11_Navigation.Models
+namespace Lab11_Navigation.Models;
+
+public partial class Contact
 {
-    public class Contact : ObservableObject
+    public int Id { get; set; }
+
+    public string Name { get; set; } = null!;
+
+    public string Phone { get; set; } = null!;
+
+    public Contact() { }
+
+    public Contact(string name, string phone) {
+        Name = name;
+        Phone = phone;
+    }
+
+
+    public bool Validate()
     {
-        private string _name = string.Empty;
-        private string _phone = string.Empty;
-        public Contact(string name, string phone)
-        {
-            _name = name;
-            _phone = phone;
-            if (!Validate()) { throw new ArgumentException("Некорректные данные контакта"); }
-        }
-        public string Name
-        {
-            get => _name;
-            set => Set(ref _name, value);
-        }
-        public string Phone
-        {
-            get => _phone;
-            set => Set(ref _phone, value);
-        }
-        public bool Validate() {
 
-            bool isNameValid = !string.IsNullOrWhiteSpace(_name);
+        bool isNameValid = !string.IsNullOrWhiteSpace(Name);
 
-            bool isPhoneValid = !string.IsNullOrWhiteSpace(_phone) &&
-                ((_phone.StartsWith("+7") && _phone.Length == 12) ||
-                (_phone.Length == 10));
+        bool isPhoneValid = !string.IsNullOrWhiteSpace(Phone) &&
+            ((Phone.StartsWith("+7") && Phone.Length == 12) ||
+            (Phone.Length == 10));
 
-            return (isNameValid && isPhoneValid);
-        }
+        return (isNameValid && isPhoneValid);
     }
 }
+

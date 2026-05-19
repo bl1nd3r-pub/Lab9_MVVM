@@ -1,22 +1,26 @@
-﻿using Lab11_Navigation.Models;
+﻿// ContactsListViewModel.cs
+using Lab11_Navigation.Interfaces;
+using Lab11_Navigation.Models;
+using Lab11_Navigation.Repositories;
 using Lab11_Navigation.Services;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using System.Windows;
 
 namespace Lab11_Navigation.ViewModels
 {
     public class ContactsListViewModel : ObservableObject
     {
+        private readonly IContactRepository _repository;
         private readonly INavigationService _navigation;
         private readonly IDialogService _dialogService;
+        private bool _isInitialized;
 
-        public ObservableCollection<Contact> Contacts { get; }
+        // Коллекция для привязки к UI
+        public ObservableCollection<Contact> Contacts { get; } = new();
 
+        // Свойства для формы добавления/редактирования
         private string _name = string.Empty;
         public string Name
         {
@@ -38,68 +42,197 @@ namespace Lab11_Navigation.ViewModels
             set => Set(ref _selectedContact, value);
         }
 
+        private bool _isLoading;
+        public bool IsLoading
+        {
+            get => _isLoading;
+            set => Set(ref _isLoading, value);
+        }
+
+        // Команды
         public ICommand AddCommand { get; }
         public ICommand DeleteCommand { get; }
-        public ICommand EditContactCommand { get; }
+        public ICommand EditCommand { get; }
+        public ICommand RefreshCommand { get; }
 
-        public ContactsListViewModel(INavigationService navigation, IDialogService dialogService)
+        public ContactsListViewModel(
+            IContactRepository repository,
+            INavigationService navigation,
+            IDialogService dialogService)
         {
+            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _navigation = navigation ?? throw new ArgumentNullException(nameof(navigation));
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
 
-            Contacts = new ObservableCollection<Contact>();
+            // Инициализация команд
+            AddCommand = new RelayCommand(async () => { await AddContactAsync(); }, CanAddContact);
+            DeleteCommand = new RelayCommand(async () => { await DeleteContactAsync(); }, CanDeleteContact);
+            EditCommand = new RelayCommand<Contact?>(EditContact, c => c != null);
+            RefreshCommand = new RelayCommand(async () => { await LoadContactsAsync(); });
 
-            AddCommand = new RelayCommand(AddContact, CanAddContact);
-            DeleteCommand = new RelayCommand<object?>(DeleteContact, CanDeleteContact);
-
-            EditContactCommand = new RelayCommand<object?>(EditContact);
+            // Автоматическая загрузка при создании
+            _ = InitializeAsync();
         }
 
-        private void AddContact()
+        private async Task InitializeAsync()
         {
-            if (Contacts.Any(c => c.Phone == Phone))
+            if (_isInitialized) return;
+
+            IsLoading = true;
+            try
+            {
+                await LoadContactsAsync();
+                _isInitialized = true;
+            }
+            catch (Exception ex)
+            {
+                _dialogService.ShowError($"Ошибка инициализации: {ex.Message}");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        private async Task LoadContactsAsync()
+        {
+            IsLoading = true;
+            try
+            {
+                var contacts = await _repository.GetAllAsync();
+
+                Contacts.Clear();
+                foreach (var contact in contacts)
+                    Contacts.Add(contact);
+            }
+            catch (Exception ex)
+            {
+                _dialogService.ShowError($"Не удалось загрузить контакты: {ex.Message}");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        private async Task AddContactAsync()
+        {
+            if (!CanAddContact()) return;
+
+            // Проверка на дубликат по телефону
+            if (await _repository.ExistsByPhoneAsync(Phone.Trim()))
             {
                 _dialogService.ShowWarning("Контакт с таким номером уже существует!");
                 return;
             }
 
-            var contact = new Contact(Name, Phone);
-            Contacts.Add(contact);
-            Name = string.Empty;
-            Phone = string.Empty;
-            _dialogService.ShowInfo("Контакт успешно добавлен");
+            var contact = new Contact
+            {
+                Name = Name.Trim(),
+                Phone = Phone.Trim()
+            };
+
+            if (!contact.Validate())
+            {
+                _dialogService.ShowWarning("Проверьте корректность введённых данных");
+                return;
+            }
+
+            try
+            {
+                await _repository.AddAsync(contact);
+
+                // Добавляем в коллекцию для мгновенного отображения в UI
+                Contacts.Add(contact);
+
+                // Сброс формы
+                Name = string.Empty;
+                Phone = string.Empty;
+
+
+                _dialogService.ShowInfo("Контакт успешно добавлен");
+            }
+            catch (Exception ex)
+            {
+                _dialogService.ShowError($"Ошибка при добавлении: {ex.Message}");
+            }
         }
 
-        private bool CanAddContact() => !string.IsNullOrWhiteSpace(Name) && !string.IsNullOrWhiteSpace(Phone);
+        private bool CanAddContact() =>
+            !string.IsNullOrWhiteSpace(Name) &&
+            !string.IsNullOrWhiteSpace(Phone) &&
+            !_isLoading;
 
-        private void DeleteContact(object? param)
+        private async Task DeleteContactAsync()
         {
-            if (SelectedContact != null)
+            if (SelectedContact == null) return;
+
+            bool confirmed = _dialogService.ShowConfirmation(
+                $"Удалить контакт \"{SelectedContact.Name}\"?",
+                "Подтверждение удаления");
+
+            if (!confirmed) return;
+
+            try
             {
-                bool confirmed = _dialogService.ShowConfirmation($"Удалить контакт \"{SelectedContact.Name}\"?", "Подтверждение");
-                if (confirmed)
+                await _repository.DeleteAsync(SelectedContact.Id);
+                Contacts.Remove(SelectedContact);
+                SelectedContact = null;
+
+                _dialogService.ShowInfo("Контакт удалён");
+            }
+            catch (Exception ex)
+            {
+                _dialogService.ShowError($"Ошибка при удалении: {ex.Message}");
+            }
+        }
+
+        private bool CanDeleteContact() => SelectedContact != null && !_isLoading;
+
+        private void EditContact(Contact? contact)
+        {
+            if (contact == null) return;
+
+            // Навигация на экран редактирования с передачей контакта
+            // Убедись, что ContactEditViewModel принимает Contact в конструкторе или через параметр
+            _navigation.NavigateTo<ContactEditViewModel>(contact);
+        }
+
+        private async Task SaveContactAsync(Contact? contact)
+        {
+            if (contact == null || !contact.Validate()) return;
+
+            // Проверка на дубликат (исключаем текущий контакт при редактировании)
+            if (await _repository.ExistsByPhoneAsync(contact.Phone, excludeId: contact.Id))
+            {
+                _dialogService.ShowWarning("Контакт с таким номером уже существует!");
+                return;
+            }
+
+            try
+            {
+                await _repository.UpdateAsync(contact);
+
+                // Находим элемент в коллекции и уведомляем об изменении
+                var existing = Contacts.FirstOrDefault(c => c.Id == contact.Id);
+                if (existing != null)
                 {
-                    Contacts.Remove(SelectedContact);
+                    var index = Contacts.IndexOf(existing);
+                    Contacts[index] = contact; // замена элемента с уведомлением UI
                 }
+
+                _dialogService.ShowInfo("Изменения сохранены");
+            }
+            catch (Exception ex)
+            {
+                _dialogService.ShowError($"Ошибка при сохранении: {ex.Message}");
             }
         }
 
-        private bool CanDeleteContact(object? param) => SelectedContact != null;
-
-        // Метод для навигации на экран редактирования
-        private void EditContact(object? parameter)
+        // Метод для обновления списка после возврата с экрана редактирования
+        public async Task RefreshAfterEditAsync()
         {
-            System.Diagnostics.Debug.WriteLine($"EditContact вызван. Parameter: {parameter?.GetType().Name}");
-
-            if (parameter is Contact contact)
-            {
-                System.Diagnostics.Debug.WriteLine($"Переход к редактированию: {contact.Name}");
-                _navigation.NavigateTo<ContactEditViewModel>(contact);
-            }
-            else
-            {
-                System.Diagnostics.Debug.WriteLine("Ошибка: параметр не является контактом или null!");
-            }
+            await LoadContactsAsync();
         }
     }
 }

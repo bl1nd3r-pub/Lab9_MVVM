@@ -23,6 +23,8 @@ namespace Lab11_Navigation.ViewModels
             add => CommandManager.RequerySuggested += value;
             remove => CommandManager.RequerySuggested -= value;
         }
+
+        public void NotifyCanExecuteChanged() => CommandManager.InvalidateRequerySuggested();
     }
 
     public class RelayCommand<T>(Action<object?> execute,
@@ -42,5 +44,7 @@ namespace Lab11_Navigation.ViewModels
             add => CommandManager.RequerySuggested += value;
             remove => CommandManager.RequerySuggested -= value;
         }
+
+        public void NotifyCanExecuteChanged() => CommandManager.InvalidateRequerySuggested();
     }
 }
