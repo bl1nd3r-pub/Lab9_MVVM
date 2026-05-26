@@ -1,5 +1,4 @@
-﻿// ContactsListViewModel.cs
-using Lab11_Navigation.Interfaces;
+﻿using Lab11_Navigation.Interfaces;
 using Lab11_Navigation.Models;
 using Lab11_Navigation.Repositories;
 using Lab11_Navigation.Services;
@@ -67,7 +66,8 @@ namespace Lab11_Navigation.ViewModels
             // Инициализация команд
             AddCommand = new RelayCommand(async () => { await AddContactAsync(); }, CanAddContact);
             DeleteCommand = new RelayCommand(async () => { await DeleteContactAsync(); }, CanDeleteContact);
-            EditCommand = new RelayCommand<Contact?>(EditContact, c => c != null);
+            EditCommand = new RelayCommand<Contact?>(contact => EditContact(contact as Contact),
+                    c => c is Contact);
             RefreshCommand = new RelayCommand(async () => { await LoadContactsAsync(); });
 
             // Автоматическая загрузка при создании
@@ -187,15 +187,42 @@ namespace Lab11_Navigation.ViewModels
             }
         }
 
+        public void UpdateContact(Contact updatedContact)
+        {
+            var existing = Contacts.FirstOrDefault(c => c.Id == updatedContact.Id);
+            if (existing != null)
+            {
+                var index = Contacts.IndexOf(existing);
+                existing.Name = updatedContact.Name;
+                existing.Phone = updatedContact.Phone;
+
+                // Уведомляем UI об изменении
+                Contacts[index] = existing;
+
+                // Если выбранный контакт - тот же, обновляем выделение
+                if (SelectedContact?.Id == updatedContact.Id)
+                {
+                    SelectedContact = existing;
+                }
+            }
+        }
+
         private bool CanDeleteContact() => SelectedContact != null && !_isLoading;
 
         private void EditContact(Contact? contact)
         {
             if (contact == null) return;
 
-            // Навигация на экран редактирования с передачей контакта
-            // Убедись, что ContactEditViewModel принимает Contact в конструкторе или через параметр
-            _navigation.NavigateTo<ContactEditViewModel>(contact);
+            // Создаём КОПИЮ контакта для редактирования, чтобы отменить изменения при откате
+            var contactCopy = new Contact
+            {
+                Id = contact.Id,
+                Name = contact.Name,
+                Phone = contact.Phone
+            };
+
+            // Навигация на экран редактирования с передачей КОПИИ контакта
+            _navigation.NavigateTo<ContactEditViewModel>(contactCopy);
         }
 
         private async Task SaveContactAsync(Contact? contact)

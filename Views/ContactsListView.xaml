@@ -20,7 +20,7 @@
             <Button Content="Удалить" Width="100"
                     Command="{Binding DeleteCommand}"/>
             <Button Content="Редактировать" 
-                    Command="{Binding EditContactCommand}" 
+                    Command="{Binding EditCommand}" 
                     CommandParameter="{Binding SelectedContact}"
                     Width="100"/>
         </StackPanel>
