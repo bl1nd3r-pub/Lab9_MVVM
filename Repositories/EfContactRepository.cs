@@ -1,6 +1,7 @@
 ﻿// EfContactRepository.cs
 using Lab11_Navigation.Interfaces;
 using Lab11_Navigation.Models;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -98,10 +99,34 @@ namespace Lab11_Navigation.Repositories
             {
                 await _context.SaveChangesAsync();
             }
-            catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains("unique constraint") == true)
+            catch (DbUpdateConcurrencyException ex)
             {
-                // Можно пробросить более понятное исключение или обработать здесь
-                throw new InvalidOperationException("Нарушение уникальности: контакт с таким номером уже существует", ex);
+                throw new InvalidOperationException(
+                    "Данные были изменены параллельно. Обновите список и повторите попытку.", ex);
+            }
+            catch (DbUpdateException ex) when (ex.InnerException is SqlException sqlEx)
+            {
+                switch (sqlEx.Number)
+                {
+                    case 2627: // Violation of UNIQUE KEY constraint
+                    case 2601: // Cannot insert duplicate key row
+                        throw new InvalidOperationException(
+                            "Нарушение уникальности: контакт с таким номером уже существует.", ex);
+                    case 547:  // FOREIGN KEY constraint conflict
+                        throw new InvalidOperationException(
+                            "Ошибка целостности: операция нарушает связи с другими записями.", ex);
+                    case 8152: // String or binary data would be truncated
+                        throw new ArgumentException(
+                            "Данные превышают допустимую длину поля.", ex);
+                    default:
+                        throw new InvalidOperationException(
+                            $"Ошибка базы данных (код {sqlEx.Number}): {sqlEx.Message}", ex);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException(
+                    "Произошла ошибка при сохранении данных.", ex);
             }
         }
     }
